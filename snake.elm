@@ -69,11 +69,10 @@ nextPosition snake direction = let (x,y) = Maybe.withDefault (0,0) (List.head sn
                                     Left  -> ((x-1) % columnCount, y)
                                     Right -> ((x+1) % columnCount, y)
 
-moveSnake : Model -> Model
-moveSnake model = let next = nextPosition model.snake model.direction
-                      sn1  = next :: model.snake
-                      sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
-                  in { model | snake = sn2 }
+moveSnake : Cell -> Model -> Model
+moveSnake next model = let sn1  = next :: model.snake
+                           sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
+                       in { model | snake = sn2 }
 
 tick : Model -> Model
 tick model = Model (model.time + 1) model.foodPosition model.snake model.direction
@@ -86,14 +85,14 @@ update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      let model' = (moveSnake >> tick) model
-          next   = nextPosition model.snake model.direction
+      let next   = nextPosition model.snake model.direction
+          model' = (moveSnake next >> tick) model
           cmd    = if next /= model.foodPosition then Cmd.none else moveFood
       in
          (model', cmd)
 
     KeyUp keyCode ->
-      (Model model.time model.foodPosition model.snake (changeDirection keyCode model.direction), Cmd.none)
+      ({model | direction = changeDirection keyCode model.direction}, Cmd.none)
 
     FoodAppeared (x,y) ->
       let (x', y') = model.foodPosition
