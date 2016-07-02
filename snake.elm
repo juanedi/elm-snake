@@ -1,6 +1,7 @@
 import Html exposing (..)
 import Html.Attributes exposing(..)
 import Html.App as Html
+import Keyboard
 import Time exposing (Time, second)
 
 
@@ -25,26 +26,49 @@ type alias Model =
   { time : Time
   , foodPosition : Cell
   , snakeBody : List(Cell)
+  , lastKey : Action
   }
 
 init : (Model, Cmd Msg)
 init =
-  (Model 0 (12,17) [(10, 3), (10, 4), (10, 5), (11, 5), (12, 5), (12, 6), (12, 7), (12, 8), (12, 9)], Cmd.none)
+  (Model 0 (12,17) [(10, 3), (10, 4), (10, 5), (11, 5), (12, 5), (12, 6), (12, 7), (12, 8), (12, 9)] None, Cmd.none)
 
 
 
 -- UPDATE
 
+type Action
+  = None
+  | Up
+  | Down
+  | Left
+  | Right
 
 type Msg
   = Tick Time
+  | KeyUp Keyboard.KeyCode
 
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      (Model (model.time + 1) model.foodPosition model.snakeBody, Cmd.none)
+      (Model (model.time + 1) model.foodPosition model.snakeBody model.lastKey, Cmd.none)
+
+    KeyUp 38 ->
+      (Model model.time model.foodPosition model.snakeBody Up, Cmd.none)
+
+    KeyUp 40 ->
+      (Model model.time model.foodPosition model.snakeBody Down, Cmd.none)
+
+    KeyUp 37 ->
+      (Model model.time model.foodPosition model.snakeBody Left, Cmd.none)
+
+    KeyUp 39 ->
+      (Model model.time model.foodPosition model.snakeBody Right, Cmd.none)
+
+    KeyUp keyCode ->
+      (model, Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -52,7 +76,10 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Time.every second Tick
+  Sub.batch [
+    Time.every second Tick,
+    Keyboard.ups KeyUp
+  ]
 
 
 
