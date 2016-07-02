@@ -4,6 +4,7 @@ import Html.App as Html
 import Keyboard
 import Time exposing (Time, second)
 import Json.Encode exposing(..)
+import Random
 
 
 main =
@@ -49,6 +50,7 @@ type Direction
 type Msg
   = Tick Time
   | KeyUp Keyboard.KeyCode
+  | FoodAppeared Cell
 
 
 changeDirection : Keyboard.KeyCode -> Direction -> Direction
@@ -73,21 +75,31 @@ moveSnake model = let next = nextPosition model.snake model.direction
                       sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
                   in { model | snake = sn2 }
 
-updateFoodPosition : Model -> Model
-updateFoodPosition model = model
-
 tick : Model -> Model
 tick model = Model (model.time + 1) model.foodPosition model.snake model.direction
 
+moveFood : Cmd Msg
+moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.int 0 (rowCount-1)))
+           in Random.generate FoodAppeared generator
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      ((moveSnake >> updateFoodPosition >> tick) model, Cmd.none)
+      let model' = (moveSnake >> tick) model
+          next   = nextPosition model.snake model.direction
+          cmd    = if next /= model.foodPosition then Cmd.none else moveFood
+      in
+         (model', cmd)
 
     KeyUp keyCode ->
       (Model model.time model.foodPosition model.snake (changeDirection keyCode model.direction), Cmd.none)
+
+    FoodAppeared (x,y) ->
+      let (x', y') = model.foodPosition
+      in if x == x' || y == y'
+            then (model, moveFood)
+            else ({model | foodPosition = (x,y)}, Cmd.none)
 
 
 -- SUBSCRIPTIONS
