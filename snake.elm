@@ -14,8 +14,8 @@ main =
     , subscriptions = subscriptions
     }
 
-debug = True
-
+debug       = False
+tickTime    = Time.inMilliseconds 150
 rowCount    = 20
 columnCount = 30
 
@@ -34,7 +34,7 @@ type alias Model =
 
 init : (Model, Cmd Msg)
 init =
-  (Model 0 (12,17) [(10, 3), (10, 4), (10, 5), (11, 5), (12, 5), (12, 6), (12, 7), (12, 8), (12, 9)] Right, Cmd.none)
+  (Model 0 (12,17) [(1,2),(1,3)] Right, Cmd.none)
 
 
 
@@ -52,15 +52,26 @@ type Msg
 
 
 changeDirection : Keyboard.KeyCode -> Direction -> Direction
-changeDirection keyCode direction = case keyCode of
-                                      38 -> Up
-                                      40 -> Down
-                                      37 -> Left
-                                      39 -> Right
-                                      _  -> direction
+changeDirection keyCode currentDirection = case keyCode of
+                                             38 -> if currentDirection /= Down then Up else currentDirection
+                                             40 -> if currentDirection /= Up then Down else currentDirection
+                                             37 -> if currentDirection /= Right then Left else currentDirection
+                                             39 -> if currentDirection /= Left then Right else currentDirection
+                                             _  -> currentDirection
+
+nextPosition : Snake -> Direction -> Cell
+nextPosition snake direction = let (x,y) = Maybe.withDefault (0,0) (List.head snake)
+                               in case direction of
+                                    Up    -> (x, (y-1) % rowCount)
+                                    Down  -> (x, (y+1) % rowCount)
+                                    Left  -> ((x-1) % columnCount, y)
+                                    Right -> ((x+1) % columnCount, y)
 
 moveSnake : Model -> Model
-moveSnake model = model
+moveSnake model = let next = nextPosition model.snake model.direction
+                      sn1  = next :: model.snake
+                      sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
+                  in { model | snake = sn2 }
 
 updateFoodPosition : Model -> Model
 updateFoodPosition model = model
@@ -85,7 +96,7 @@ update msg model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch [
-    Time.every second Tick,
+    Time.every tickTime Tick,
     Keyboard.ups KeyUp
   ]
 
@@ -97,17 +108,17 @@ cellWidth  = 28
 cellHeight = 28
 
 cellClass : Model -> Int -> Int -> String
-cellClass model x y = if (x,y) == model.foodPosition
+cellClass model x y = if List.member(x,y) model.snake
+                      then "cell-snake"
+                      else if (x,y) == model.foodPosition
                         then "cell-food"
-                        else if List.member (x,y) model.snake
-                                then "cell-snake"
-                                else "cell-background"
+                        else "cell-background"
 
 px : Int -> String
 px n = (toString n) ++ "px"
 
 cell : Model -> Int -> Int -> Html a
-cell model rowIndex colIndex = let c = cellClass model rowIndex colIndex
+cell model rowIndex colIndex = let c = cellClass model colIndex rowIndex
                                in
                                   div [ classList [ ("cell", True)
                                                   , (c, True)
@@ -121,7 +132,7 @@ cell model rowIndex colIndex = let c = cellClass model rowIndex colIndex
 buildRow : Model -> Int -> Html a
 buildRow model rowIndex = let
                             buildCell = (\colIndex -> cell model rowIndex colIndex)
-                            cells = List.map buildCell [1..columnCount]
+                            cells = List.map buildCell [0..columnCount-1]
                           in
                             div [ classList [("row", True)] ] cells
 
@@ -132,7 +143,7 @@ gameGrid model = let gridWidth = columnCount * cellHeight
                    div [ classList [("grid", True), ("container", True)]
                        , style [("width", px gridWidth)]
                        ]
-                       (List.map (\rowIndex -> buildRow model rowIndex) [1..rowCount])
+                       (List.map (\rowIndex -> buildRow model rowIndex) [0..rowCount-1])
 
 
 modelInspector : Model -> Html Msg
