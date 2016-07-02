@@ -23,25 +23,25 @@ columnCount = 30
 
 
 type alias Cell = (Int, Int)
+type alias Snake = List(Cell)
 
 type alias Model =
   { time : Time
   , foodPosition : Cell
-  , snakeBody : List(Cell)
-  , lastKey : Action
+  , snake : Snake
+  , direction : Direction
   }
 
 init : (Model, Cmd Msg)
 init =
-  (Model 0 (12,17) [(10, 3), (10, 4), (10, 5), (11, 5), (12, 5), (12, 6), (12, 7), (12, 8), (12, 9)] None, Cmd.none)
+  (Model 0 (12,17) [(10, 3), (10, 4), (10, 5), (11, 5), (12, 5), (12, 6), (12, 7), (12, 8), (12, 9)] Right, Cmd.none)
 
 
 
 -- UPDATE
 
-type Action
-  = None
-  | Up
+type Direction
+  = Up
   | Down
   | Left
   | Right
@@ -51,26 +51,32 @@ type Msg
   | KeyUp Keyboard.KeyCode
 
 
+changeDirection : Keyboard.KeyCode -> Direction -> Direction
+changeDirection keyCode direction = case keyCode of
+                                      38 -> Up
+                                      40 -> Down
+                                      37 -> Left
+                                      39 -> Right
+                                      _  -> direction
+
+moveSnake : Model -> Model
+moveSnake model = model
+
+updateFoodPosition : Model -> Model
+updateFoodPosition model = model
+
+tick : Model -> Model
+tick model = Model (model.time + 1) model.foodPosition model.snake model.direction
+
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      (Model (model.time + 1) model.foodPosition model.snakeBody model.lastKey, Cmd.none)
-
-    KeyUp 38 ->
-      (Model model.time model.foodPosition model.snakeBody Up, Cmd.none)
-
-    KeyUp 40 ->
-      (Model model.time model.foodPosition model.snakeBody Down, Cmd.none)
-
-    KeyUp 37 ->
-      (Model model.time model.foodPosition model.snakeBody Left, Cmd.none)
-
-    KeyUp 39 ->
-      (Model model.time model.foodPosition model.snakeBody Right, Cmd.none)
+      ((moveSnake >> updateFoodPosition >> tick) model, Cmd.none)
 
     KeyUp keyCode ->
-      (model, Cmd.none)
+      (Model model.time model.foodPosition model.snake (changeDirection keyCode model.direction), Cmd.none)
 
 
 -- SUBSCRIPTIONS
@@ -93,7 +99,7 @@ cellHeight = 28
 cellClass : Model -> Int -> Int -> String
 cellClass model x y = if (x,y) == model.foodPosition
                         then "cell-food"
-                        else if List.member (x,y) model.snakeBody
+                        else if List.member (x,y) model.snake
                                 then "cell-snake"
                                 else "cell-background"
 
@@ -130,7 +136,7 @@ gameGrid model = let gridWidth = columnCount * cellHeight
 
 
 modelInspector : Model -> Html Msg
-modelInspector model = let attributes = [ ("lastKey", string (toString model.lastKey))
+modelInspector model = let attributes = [ ("direction", string (toString model.direction))
                                         , ("time", float model.time)
                                         ]
                        in div [ style [("margin-top", "40px")] ]
