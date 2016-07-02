@@ -3,6 +3,7 @@ import Html.Attributes exposing(..)
 import Html.App as Html
 import Keyboard
 import Time exposing (Time, second)
+import Json.Encode exposing(..)
 
 
 main =
@@ -13,6 +14,7 @@ main =
     , subscriptions = subscriptions
     }
 
+debug = True
 
 rowCount    = 20
 columnCount = 30
@@ -118,10 +120,26 @@ buildRow model rowIndex = let
                             div [ classList [("row", True)] ] cells
 
 
+gameGrid : Model -> Html Msg
+gameGrid model = let gridWidth = columnCount * cellHeight
+                 in
+                   div [ classList [("grid", True), ("container", True)]
+                       , style [("width", px gridWidth)]
+                       ]
+                       (List.map (\rowIndex -> buildRow model rowIndex) [1..rowCount])
+
+
+modelInspector : Model -> Html Msg
+modelInspector model = let attributes = [ ("lastKey", string (toString model.lastKey))
+                                        , ("time", float model.time)
+                                        ]
+                       in div [ style [("margin-top", "40px")] ]
+                              [ pre [] [text (Json.Encode.encode 2 (Json.Encode.object attributes))] ]
+
 view : Model -> Html Msg
-view model = let gridWidth = columnCount * cellHeight
-             in
-               div [ classList [("grid", True), ("container", True)]
-                   , style [("width", px gridWidth)]
-                   ]
-                   (List.map (\rowIndex -> buildRow model rowIndex) [1..rowCount])
+view model = if debug
+                then div []
+                         [ gameGrid model
+                         , modelInspector model
+                         ]
+                else gameGrid model
