@@ -106,7 +106,7 @@ speedSelector model = div [ classList [("btn-toolbar", True)], attribute "role" 
                           ]
 
 modelInspector : Model -> Html Msg
-modelInspector model = div [ style [("margin-top", "40px")] ]
+modelInspector model = div [ classList [("hidden", not debug)], style [("margin-top", "40px")] ]
                            [ pre [] [text (Json.Encode.encode 2 (debugAttributes model))] ]
 
 row : Html Msg -> Html Msg
@@ -122,10 +122,9 @@ view model = let
                snakeView = App.map SnakeMsg (Snake.view model.snakeModel)
                baseView  = [ speedSelector model
                            , snakeView
+                           , inspector
                            ]
                inspector = modelInspector model
              in
-               if debug
-                 then div [] [rowLayout (inspector::baseView)]
-                 else div [] [rowLayout baseView]
+                div [] [rowLayout baseView]
 

@@ -1,5 +1,5 @@
 body {
-  background-color: #666666;
+  background-color: #ffffff;
 }
 
 .grid {
@@ -19,7 +19,7 @@ body {
 }
 
 .grid .cell-background {
-  background-color: #ffffff;
+  background-color: #bbbbbb;
 }
 
 .grid .cell-snake {
