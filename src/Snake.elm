@@ -25,7 +25,7 @@ type alias Model =
 init : (Model, Cmd Msg)
 init =
     ({ foodPosition = (12,17)
-     , snake = [(1,2), (1,3)]
+     , snake = [(1,2), (1,3), (1,4), (1,5)]
      , bites = 0
      , direction = Right
      , directionChanged = False
