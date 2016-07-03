@@ -19,7 +19,7 @@ type alias Model =
   , snake : Snake
   , bites : Int
   , direction : Direction
-  , directionChanged : Bool
+  , directionChange : Maybe Direction
   }
 
 init : (Model, Cmd Msg)
@@ -28,7 +28,7 @@ init =
      , snake = [(1,2), (1,3), (1,4), (1,5)]
      , bites = 0
      , direction = Right
-     , directionChanged = False
+     , directionChange = Nothing
      }
     , Cmd.none
     )
@@ -52,13 +52,13 @@ type Msg
   | FoodAppeared Cell
 
 
-changeDirection : Keyboard.KeyCode -> Direction -> Direction
-changeDirection keyCode currentDirection = case keyCode of
-                                             38 -> if currentDirection /= Down then Up else currentDirection
-                                             40 -> if currentDirection /= Up then Down else currentDirection
-                                             37 -> if currentDirection /= Right then Left else currentDirection
-                                             39 -> if currentDirection /= Left then Right else currentDirection
-                                             _  -> currentDirection
+keyToDirection : Keyboard.KeyCode -> Direction -> Direction
+keyToDirection keyCode currentDirection = case keyCode of
+                                            38 -> if currentDirection /= Down then Up else currentDirection
+                                            40 -> if currentDirection /= Up then Down else currentDirection
+                                            37 -> if currentDirection /= Right then Left else currentDirection
+                                            39 -> if currentDirection /= Left then Right else currentDirection
+                                            _  -> currentDirection
 
 nextPosition : Snake -> Direction -> Cell
 nextPosition snake direction = let (x,y) = Maybe.withDefault (0,0) (List.head snake)
@@ -68,13 +68,22 @@ nextPosition snake direction = let (x,y) = Maybe.withDefault (0,0) (List.head sn
                                     Left  -> (x-1, y)
                                     Right -> (x+1, y)
 
+updateDirection : Model -> Model
+updateDirection model = case model.directionChange of
+                          Just d ->
+                            { model | direction = d, directionChange = Nothing }
+                          Nothing ->
+                            model
+
 moveSnake : Cell -> Model -> Model
 moveSnake next model = let sn1  = next :: model.snake
                            sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
-                       in { model | snake = sn2, directionChanged = False }
+                       in { model | snake = sn2 }
 
-incrementBites : Model -> Model
-incrementBites model = { model | bites = model.bites + 1 }
+incrementBites : Bool -> Model -> Model
+incrementBites bite model = if bite
+                              then { model | bites = model.bites + 1 }
+                              else model
 
 
 moveFood : Cmd Msg
@@ -97,15 +106,20 @@ update msg model =
             then init
             else let
                    bite   = next == model.foodPosition
-                   update = if bite then (moveSnake next >> incrementBites) else moveSnake next
                    cmd    = if bite then moveFood else Cmd.none
+                   update = updateDirection >> moveSnake next >> incrementBites bite
                  in
                     (update model, cmd)
 
     KeyUp keyCode ->
-      if model.directionChanged
-        then (model, Cmd.none)
-        else ({model | direction = changeDirection keyCode model.direction, directionChanged = True}, Cmd.none)
+      case model.directionChange of
+        Just _ ->
+          (model, Cmd.none)
+        Nothing ->
+          let
+            directionChange = keyToDirection keyCode model.direction
+          in
+            ({model | direction = directionChange, directionChange = Just directionChange}, Cmd.none)
 
     FoodAppeared (x,y) ->
       let (x', y') = model.foodPosition
