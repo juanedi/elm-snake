@@ -1,22 +1,11 @@
+module Snake exposing (Model, Msg(Tick), init, update, view, subscriptions, debugAttributes)
+
 import Html exposing (..)
 import Html.Attributes exposing(..)
-import Html.App as Html
 import Keyboard
-import Time exposing (Time, second)
-import Json.Encode exposing(..)
 import Random
+import Json.Encode exposing(..)
 
-
-main =
-  Html.program
-    { init = init
-    , view = view
-    , update = update
-    , subscriptions = subscriptions
-    }
-
-debug       = False
-tickTime    = Time.inMilliseconds 150
 rowCount    = 20
 columnCount = 20
 
@@ -37,6 +26,13 @@ init =
   (Model (12,17) [(1,2),(1,3)] Right, Cmd.none)
 
 
+head : Snake -> Cell
+head snake = Maybe.withDefault (0,0) (List.head snake)
+
+debugAttributes model = let (hX, hY) = head model.snake
+                        in Json.Encode.object [ ("direction", string (toString model.direction))
+                                              , ("head", Json.Encode.list [int hX, int hY])
+                                              ]
 
 -- UPDATE
 
@@ -47,7 +43,7 @@ type Direction
   | Right
 
 type Msg
-  = Tick Time
+  = Tick
   | KeyUp Keyboard.KeyCode
   | FoodAppeared Cell
 
@@ -87,7 +83,7 @@ lost (x,y) model = List.member (x,y) model.snake
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Tick newTime ->
+    Tick ->
       let next = nextPosition model.snake model.direction
       in if lost next model
             then init
@@ -111,12 +107,7 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-  Sub.batch [
-    Time.every tickTime Tick,
-    Keyboard.ups KeyUp
-  ]
-
+subscriptions model = Keyboard.ups KeyUp
 
 
 -- VIEW
@@ -154,25 +145,11 @@ buildRow model rowIndex = let
                             div [ classList [("row", True)] ] cells
 
 
-gameGrid : Model -> Html Msg
-gameGrid model = let gridWidth = columnCount * cellHeight
-                 in
-                   div [ classList [("grid", True), ("container", True)]
-                       , style [("width", px gridWidth)]
-                       ]
-                       (List.map (\rowIndex -> buildRow model rowIndex) [0..rowCount-1])
-
-
-modelInspector : Model -> Html Msg
-modelInspector model = let attributes = [ ("direction", string (toString model.direction))
-                                        ]
-                       in div [ style [("margin-top", "40px")] ]
-                              [ pre [] [text (Json.Encode.encode 2 (Json.Encode.object attributes))] ]
-
 view : Model -> Html Msg
-view model = if debug
-                then div []
-                         [ gameGrid model
-                         , modelInspector model
-                         ]
-                else gameGrid model
+view model = let gridWidth = columnCount * cellHeight
+             in
+               div [ classList [("grid", True), ("container", True)]
+                   , style [("width", px gridWidth)]
+                   ]
+                   (List.map (\rowIndex -> buildRow model rowIndex) [0..rowCount-1])
+
