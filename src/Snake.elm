@@ -1,4 +1,4 @@
-module Snake exposing (Model, Msg(Tick), init, update, view, subscriptions)
+module Snake exposing (Model, Msg(Advance), init, update, view, subscriptions)
 
 import Html exposing (..)
 import Html.Attributes exposing(..)
@@ -38,7 +38,7 @@ type Direction
   | Right
 
 type Msg
-  = Tick
+  = Advance
   | KeyUp Keyboard.KeyCode
   | FoodAppeared Cell
 
@@ -78,7 +78,7 @@ lost (x,y) model = List.member (x,y) model.snake
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    Tick ->
+    Advance ->
       let next = nextPosition model.snake model.direction
       in if lost next model
             then init

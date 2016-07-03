@@ -49,22 +49,22 @@ type Msg
   | SetDebug Bool
   | SnakeMsg Snake.Msg
 
-shouldTick: Model -> Bool
-shouldTick model = let tickTime = case model.speed of
-                                    Slow        -> 3
-                                    Fast        -> 2
-                                    Mindblowing -> 1
-                   in
-                      (model.time % tickTime) == 0
+shouldAdvance: Model -> Bool
+shouldAdvance model = let tickTime = case model.speed of
+                                       Slow        -> 3
+                                       Fast        -> 2
+                                       Mindblowing -> 1
+                      in
+                         (model.time % tickTime) == 0
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case msg of
                      Clock _ ->
                        let model' = {model | time = model.time + 1}
                        in
-                         if shouldTick model'
+                         if shouldAdvance model'
                            then
-                             let (sModel, cmd) = Snake.update Snake.Tick model.snakeModel
+                             let (sModel, cmd) = Snake.update Advance model.snakeModel
                              in 
                                 ({model | snakeModel = sModel, time = model.time+1}, Cmd.map SnakeMsg cmd)
                            else
