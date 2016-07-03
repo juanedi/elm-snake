@@ -5,8 +5,8 @@ import Html.Attributes exposing(..)
 import Keyboard
 import Random
 
-rowCount    = 20
-columnCount = 20
+rowCount    = 22
+columnCount = 22
 
 -- MODEL
 
@@ -109,7 +109,7 @@ update msg model =
                    cmd    = if bite then moveFood else Cmd.none
                    update = updateDirection >> moveSnake next >> incrementBites bite
                  in
-                    (update model, cmd)
+                   (update model, cmd)
 
     KeyUp keyCode ->
       case model.directionChange of
