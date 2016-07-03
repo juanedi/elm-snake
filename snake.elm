@@ -18,7 +18,7 @@ main =
 debug       = False
 tickTime    = Time.inMilliseconds 150
 rowCount    = 20
-columnCount = 30
+columnCount = 20
 
 -- MODEL
 
@@ -27,15 +27,14 @@ type alias Cell = (Int, Int)
 type alias Snake = List(Cell)
 
 type alias Model =
-  { time : Time
-  , foodPosition : Cell
+  { foodPosition : Cell
   , snake : Snake
   , direction : Direction
   }
 
 init : (Model, Cmd Msg)
 init =
-  (Model 0 (12,17) [(1,2),(1,3)] Right, Cmd.none)
+  (Model (12,17) [(1,2),(1,3)] Right, Cmd.none)
 
 
 
@@ -64,32 +63,39 @@ changeDirection keyCode currentDirection = case keyCode of
 nextPosition : Snake -> Direction -> Cell
 nextPosition snake direction = let (x,y) = Maybe.withDefault (0,0) (List.head snake)
                                in case direction of
-                                    Up    -> (x, (y-1) % rowCount)
-                                    Down  -> (x, (y+1) % rowCount)
-                                    Left  -> ((x-1) % columnCount, y)
-                                    Right -> ((x+1) % columnCount, y)
+                                    Up    -> (x, y-1)
+                                    Down  -> (x, y+1)
+                                    Left  -> (x-1, y)
+                                    Right -> (x+1, y)
 
 moveSnake : Cell -> Model -> Model
 moveSnake next model = let sn1  = next :: model.snake
                            sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
                        in { model | snake = sn2 }
 
-tick : Model -> Model
-tick model = Model (model.time + 1) model.foodPosition model.snake model.direction
-
 moveFood : Cmd Msg
 moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.int 0 (rowCount-1)))
            in Random.generate FoodAppeared generator
+
+lost : Cell -> Model -> Bool
+lost (x,y) model = List.member (x,y) model.snake
+                     || x < 0
+                     || columnCount <= x
+                     || y < 0
+                     || rowCount <= y
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     Tick newTime ->
-      let next   = nextPosition model.snake model.direction
-          model' = (moveSnake next >> tick) model
-          cmd    = if next /= model.foodPosition then Cmd.none else moveFood
-      in
-         (model', cmd)
+      let next = nextPosition model.snake model.direction
+      in if lost next model
+            then init
+            else let
+                   model' = moveSnake next model
+                   cmd    = if next /= model.foodPosition then Cmd.none else moveFood
+                 in
+                    (model', cmd)
 
     KeyUp keyCode ->
       ({model | direction = changeDirection keyCode model.direction}, Cmd.none)
@@ -159,7 +165,6 @@ gameGrid model = let gridWidth = columnCount * cellHeight
 
 modelInspector : Model -> Html Msg
 modelInspector model = let attributes = [ ("direction", string (toString model.direction))
-                                        , ("time", float model.time)
                                         ]
                        in div [ style [("margin-top", "40px")] ]
                               [ pre [] [text (Json.Encode.encode 2 (Json.Encode.object attributes))] ]
