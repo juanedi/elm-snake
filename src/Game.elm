@@ -143,7 +143,7 @@ modelInspector model = div [ classList [("hidden", not model.debug)], style [("m
                            [ pre [] [text (toString model)] ]
 
 points : Model -> Html Msg
-points model = h3 [ class "status-part" ] [ text (toString model.snakeModel.bites) ]
+points model = h1 [ class "status-part" ] [ text (toString model.snakeModel.bites) ]
 
 statusPart : String -> Html Msg -> Html Msg
 statusPart title content = div [] [ h4 [] [ text title ]
