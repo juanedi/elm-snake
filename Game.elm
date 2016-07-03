@@ -34,7 +34,12 @@ init : (Model, Cmd Msg)
 init =
   let (sModel, cmd) = Snake.init
   in
-     (Model sModel Fast False 0, Cmd.map SnakeMsg cmd)
+     ( { snakeModel = sModel
+       , speed = Fast
+       , debug = False
+       , time = 0
+       }
+     , Cmd.map SnakeMsg cmd)
 
 -- UPDATE
 
@@ -61,7 +66,7 @@ update msg model = case msg of
                            then
                              let (sModel, cmd) = Snake.update Snake.Tick model.snakeModel
                              in 
-                                (Model sModel model.speed model.debug (model.time + 1), Cmd.map SnakeMsg cmd)
+                                ({model | snakeModel = sModel, time = model.time+1}, Cmd.map SnakeMsg cmd)
                            else
                              (model', Cmd.none)
 
@@ -74,7 +79,7 @@ update msg model = case msg of
                      SnakeMsg m ->
                        let (sModel, cmd) = Snake.update m model.snakeModel
                        in
-                          (Model sModel model.speed model.debug model.time, Cmd.map SnakeMsg cmd)
+                          ({model | snakeModel = sModel}, Cmd.map SnakeMsg cmd)
 
 
 -- SUBSCRIPTIONS
