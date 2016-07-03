@@ -19,6 +19,7 @@ type alias Model =
   , snake : Snake
   , bites : Int
   , direction : Direction
+  , directionChanged : Bool
   }
 
 init : (Model, Cmd Msg)
@@ -27,6 +28,7 @@ init =
      , snake = [(1,2), (1,3)]
      , bites = 0
      , direction = Right
+     , directionChanged = False
      }
     , Cmd.none
     )
@@ -69,10 +71,11 @@ nextPosition snake direction = let (x,y) = Maybe.withDefault (0,0) (List.head sn
 moveSnake : Cell -> Model -> Model
 moveSnake next model = let sn1  = next :: model.snake
                            sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
-                       in { model | snake = sn2 }
+                       in { model | snake = sn2, directionChanged = False }
 
 incrementBites : Model -> Model
 incrementBites model = { model | bites = model.bites + 1 }
+
 
 moveFood : Cmd Msg
 moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.int 0 (rowCount-1)))
@@ -100,7 +103,9 @@ update msg model =
                     (update model, cmd)
 
     KeyUp keyCode ->
-      ({model | direction = changeDirection keyCode model.direction}, Cmd.none)
+      if model.directionChanged
+        then (model, Cmd.none)
+        else ({model | direction = changeDirection keyCode model.direction, directionChanged = True}, Cmd.none)
 
     FoodAppeared (x,y) ->
       let (x', y') = model.foodPosition
