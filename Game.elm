@@ -4,7 +4,6 @@ import Html.App as App
 import Html.Attributes exposing(..)
 import Html.Events exposing(..)
 import Time exposing (Time, second)
-import Json.Encode exposing(..)
 
 tickTime = Time.inMilliseconds 50
 
@@ -37,10 +36,6 @@ init =
   in
      (Model sModel Fast False 0, Cmd.map SnakeMsg cmd)
 
-debugAttributes model = Json.Encode.object [ ("time", int model.time)
-                                           , ("speed", string (toString model.speed))
-                                           , ("snake", Snake.debugAttributes model.snakeModel)
-                                           ]
 -- UPDATE
 
 type Msg
@@ -140,7 +135,7 @@ debugToggle model = div [ classList [("form-group", True)] ]
 
 modelInspector : Model -> Html Msg
 modelInspector model = div [ classList [("hidden", not model.debug)], style [("margin-top", "40px")] ]
-                           [ pre [] [text (Json.Encode.encode 2 (debugAttributes model))] ]
+                           [ pre [] [text (toString model)] ]
 
 row : Html Msg -> Html Msg
 row component = div [ classList [("row", True)] ]

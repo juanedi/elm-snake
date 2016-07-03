@@ -1,10 +1,9 @@
-module Snake exposing (Model, Msg(Tick), init, update, view, subscriptions, debugAttributes)
+module Snake exposing (Model, Msg(Tick), init, update, view, subscriptions)
 
 import Html exposing (..)
 import Html.Attributes exposing(..)
 import Keyboard
 import Random
-import Json.Encode exposing(..)
 
 rowCount    = 20
 columnCount = 20
@@ -29,10 +28,6 @@ init =
 head : Snake -> Cell
 head snake = Maybe.withDefault (0,0) (List.head snake)
 
-debugAttributes model = let (hX, hY) = head model.snake
-                        in Json.Encode.object [ ("direction", string (toString model.direction))
-                                              , ("head", Json.Encode.list [int hX, int hY])
-                                              ]
 
 -- UPDATE
 
