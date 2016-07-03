@@ -51,7 +51,7 @@ type Msg
 
 shouldAdvance: Model -> Bool
 shouldAdvance model = let tickTime = case model.speed of
-                                       Slow        -> 10
+                                       Slow        -> 20
                                        Fast        -> 5
                                        Mindblowing -> 3
                       in
