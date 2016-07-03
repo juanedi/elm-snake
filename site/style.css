@@ -6,12 +6,16 @@ body .row {
   margin-top: 35px;
 }
 
+.status-part {
+  margin-bottom: 60px;
+}
+
 .settings label {
   margin-right: 20px;
 }
 
 .settings .form-group {
-  margin-right: 40px;
+  margin-top: 30px;
 }
 
 .grid {

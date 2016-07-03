@@ -93,7 +93,7 @@ subscriptions model =
 -- VIEW
 
 settings : Model -> Html Msg
-settings model = Html.form [ classList [("settings", True), ("form-inline", True)] ]
+settings model = Html.form [ class "settings" ]
                            [ speedSelector model
                            , debugToggle model
                            ]
@@ -109,9 +109,9 @@ speedOption model speed = input [ type' "button"
                                  [ ]
 
 speedSelector : Model -> Html Msg
-speedSelector model = div [ classList [("form-group", True)] ]
+speedSelector model = div [ class "form-group" ]
                           [ label [ for "speed" ] [ text "Speed" ]
-                          , div [ classList [("btn-group", True)] ]
+                          , div [ class "btn-group" ]
                                 [ speedOption model Slow
                                 , speedOption model Fast
                                 , speedOption model Mindblowing] 
@@ -130,9 +130,9 @@ debugOption model val = input [ type' "button"
                                  [ ]
 
 debugToggle : Model -> Html Msg
-debugToggle model = div [ classList [("form-group", True)] ]
+debugToggle model = div [ class "form-group" ]
                           [ label [ for "debug" ] [ text "Debug" ]
-                          , div [ classList [("btn-group", True)] ]
+                          , div [ class "btn-group" ]
                                 [ debugOption model True
                                 , debugOption model False
                                 ] 
@@ -142,20 +142,38 @@ modelInspector : Model -> Html Msg
 modelInspector model = div [ classList [("hidden", not model.debug)], style [("margin-top", "40px")] ]
                            [ pre [] [text (toString model)] ]
 
+points : Model -> Html Msg
+points model = h3 [ class "status-part" ] [ text (toString model.snakeModel.bites) ]
+
+statusPart : String -> Html Msg -> Html Msg
+statusPart title content = div [] [ h4 [] [ text title ]
+                                  , content
+                                  ]
+
+gameView : Model -> Html Msg
+gameView model = let snakeView  = App.map SnakeMsg (Snake.view model.snakeModel)
+                     statusview = div []
+                                      [ statusPart "Score" (points model)
+                                      , statusPart "Settings" (settings model)
+                                      ]
+                 in
+                   div [ class "row" ]
+                       [ div [ class "col-md-8" ] [ snakeView ]
+                       , div [ class "col-md-4" ] [ statusview ]
+                       ]
+
 row : Html Msg -> Html Msg
-row component = div [ classList [("row", True)] ]
+row component = div [ class "row" ]
                     [ component ]
 
 rowLayout : List(Html Msg) -> Html Msg
-rowLayout components = div [ classList [("container", True)] ]
+rowLayout components = div [ class "container" ]
                            (List.map row components)
 
 view : Model -> Html Msg
 view model = let
-               snakeView = App.map SnakeMsg (Snake.view model.snakeModel)
                inspector = modelInspector model
-               baseView  = [ snakeView
-                           , settings model
+               baseView  = [ gameView model
                            , inspector
                            ]
              in

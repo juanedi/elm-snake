@@ -17,12 +17,19 @@ type alias Snake = List(Cell)
 type alias Model =
   { foodPosition : Cell
   , snake : Snake
+  , bites : Int
   , direction : Direction
   }
 
 init : (Model, Cmd Msg)
 init =
-  (Model (12,17) [(1,2),(1,3)] Right, Cmd.none)
+    ({ foodPosition = (12,17)
+     , snake = [(1,2), (1,3)]
+     , bites = 0
+     , direction = Right
+     }
+    , Cmd.none
+    )
 
 
 head : Snake -> Cell
@@ -64,6 +71,9 @@ moveSnake next model = let sn1  = next :: model.snake
                            sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
                        in { model | snake = sn2 }
 
+incrementBites : Model -> Model
+incrementBites model = { model | bites = model.bites + 1 }
+
 moveFood : Cmd Msg
 moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.int 0 (rowCount-1)))
            in Random.generate FoodAppeared generator
@@ -83,10 +93,11 @@ update msg model =
       in if lost next model
             then init
             else let
-                   model' = moveSnake next model
-                   cmd    = if next /= model.foodPosition then Cmd.none else moveFood
+                   bite   = next == model.foodPosition
+                   update = if bite then (moveSnake next >> incrementBites) else moveSnake next
+                   cmd    = if bite then moveFood else Cmd.none
                  in
-                    (model', cmd)
+                    (update model, cmd)
 
     KeyUp keyCode ->
       ({model | direction = changeDirection keyCode model.direction}, Cmd.none)
@@ -137,13 +148,13 @@ buildRow model rowIndex = let
                             buildCell = (\colIndex -> cell model rowIndex colIndex)
                             cells = List.map buildCell [0..columnCount-1]
                           in
-                            div [ classList [("row", True)] ] cells
+                            div [ class "row" ] cells
 
 
 view : Model -> Html Msg
 view model = let gridWidth = columnCount * cellHeight
              in
-               div [ classList [("grid", True), ("container", True)]
+               div [ class "grid container"
                    , style [("width", px gridWidth)]
                    ]
                    (List.map (\rowIndex -> buildRow model rowIndex) [0..rowCount-1])
