@@ -5,7 +5,7 @@ import Html.Attributes exposing(..)
 import Html.Events exposing(..)
 import Time exposing (Time, second)
 
-tickTime = Time.inMilliseconds 50
+tickTime = Time.inMilliseconds 10
 
 main =
   App.program
@@ -51,9 +51,9 @@ type Msg
 
 shouldAdvance: Model -> Bool
 shouldAdvance model = let tickTime = case model.speed of
-                                       Slow        -> 3
-                                       Fast        -> 2
-                                       Mindblowing -> 1
+                                       Slow        -> 10
+                                       Fast        -> 5
+                                       Mindblowing -> 3
                       in
                          (model.time % tickTime) == 0
 
