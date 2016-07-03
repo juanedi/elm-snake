@@ -2,8 +2,19 @@ body {
   background-color: #ffffff;
 }
 
+body .row {
+  margin-top: 35px;
+}
+
+.settings label {
+  margin-right: 20px;
+}
+
+.settings .form-group {
+  margin-right: 40px;
+}
+
 .grid {
-  margin-top: 100px;
   padding: 0;
 }
 

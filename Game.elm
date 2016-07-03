@@ -6,7 +6,6 @@ import Html.Events exposing(..)
 import Time exposing (Time, second)
 import Json.Encode exposing(..)
 
-debug    = False
 tickTime = Time.inMilliseconds 50
 
 main =
@@ -23,6 +22,7 @@ main =
 type alias Model =
   { snakeModel : Snake.Model
   , speed : Speed
+  , debug : Bool
   , time : Int
   }
 
@@ -35,7 +35,7 @@ init : (Model, Cmd Msg)
 init =
   let (sModel, cmd) = Snake.init
   in
-     (Model sModel Fast 0, Cmd.map SnakeMsg cmd)
+     (Model sModel Fast False 0, Cmd.map SnakeMsg cmd)
 
 debugAttributes model = Json.Encode.object [ ("time", int model.time)
                                            , ("speed", string (toString model.speed))
@@ -46,6 +46,7 @@ debugAttributes model = Json.Encode.object [ ("time", int model.time)
 type Msg
   = Clock Time
   | SetSpeed Speed
+  | SetDebug Bool
   | SnakeMsg Snake.Msg
 
 shouldTick: Model -> Bool
@@ -65,17 +66,20 @@ update msg model = case msg of
                            then
                              let (sModel, cmd) = Snake.update Snake.Tick model.snakeModel
                              in 
-                                (Model sModel model.speed (model.time + 1), Cmd.map SnakeMsg cmd)
+                                (Model sModel model.speed model.debug (model.time + 1), Cmd.map SnakeMsg cmd)
                            else
                              (model', Cmd.none)
 
                      SetSpeed s ->
                        ({model | speed = s}, Cmd.none)
 
+                     SetDebug v ->
+                       ({model | debug = v}, Cmd.none)
+
                      SnakeMsg m ->
                        let (sModel, cmd) = Snake.update m model.snakeModel
                        in
-                          (Model sModel model.speed model.time, Cmd.map SnakeMsg cmd)
+                          (Model sModel model.speed model.debug model.time, Cmd.map SnakeMsg cmd)
 
 
 -- SUBSCRIPTIONS
@@ -88,25 +92,54 @@ subscriptions model =
 
 -- VIEW
 
+settings : Model -> Html Msg
+settings model = Html.form [ classList [("settings", True), ("form-inline", True)] ]
+                           [ speedSelector model
+                           , debugToggle model
+                           ]
+
 speedOption : Model -> Speed -> Html Msg
-speedOption model speed = button [ type' "button"
+speedOption model speed = input [ type' "button"
                                  , onClick (SetSpeed speed)
+                                 , value (toString speed)
                                  , classList [ ("btn", True)
                                              , ("btn-default", True)
-                                             , ("disabled", model.speed == speed)]
+                                             , ("active", model.speed == speed)]
                                  ]
-                                 [ text (toString speed)]
+                                 [ ]
 
 speedSelector : Model -> Html Msg
-speedSelector model = div [ classList [("btn-toolbar", True)], attribute "role" "toolbar" ]
-                          [ div [ classList [("btn-group", True)] ]
+speedSelector model = div [ classList [("form-group", True)] ]
+                          [ label [ for "speed" ] [ text "Speed" ]
+                          , div [ classList [("btn-group", True)] ]
                                 [ speedOption model Slow
                                 , speedOption model Fast
-                                , speedOption model Mindblowing]
+                                , speedOption model Mindblowing] 
+                          ]
+
+
+debugOption : Model -> Bool -> Html Msg
+debugOption model val = input [ type' "button"
+                                 , onClick (SetDebug val)
+                                 , value (if val then "On" else "Off")
+                                 , classList [ ("btn", True)
+                                             , ("btn-default", True)
+                                             , ("active", model.debug == val)
+                                             ]
+                                 ]
+                                 [ ]
+
+debugToggle : Model -> Html Msg
+debugToggle model = div [ classList [("form-group", True)] ]
+                          [ label [ for "debug" ] [ text "Debug" ]
+                          , div [ classList [("btn-group", True)] ]
+                                [ debugOption model True
+                                , debugOption model False
+                                ] 
                           ]
 
 modelInspector : Model -> Html Msg
-modelInspector model = div [ classList [("hidden", not debug)], style [("margin-top", "40px")] ]
+modelInspector model = div [ classList [("hidden", not model.debug)], style [("margin-top", "40px")] ]
                            [ pre [] [text (Json.Encode.encode 2 (debugAttributes model))] ]
 
 row : Html Msg -> Html Msg
@@ -120,11 +153,11 @@ rowLayout components = div [ classList [("container", True)] ]
 view : Model -> Html Msg
 view model = let
                snakeView = App.map SnakeMsg (Snake.view model.snakeModel)
-               baseView  = [ speedSelector model
-                           , snakeView
+               inspector = modelInspector model
+               baseView  = [ snakeView
+                           , settings model
                            , inspector
                            ]
-               inspector = modelInspector model
              in
                 div [] [rowLayout baseView]
 
