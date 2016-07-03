@@ -2,11 +2,12 @@ import Snake exposing (..)
 import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing(..)
+import Html.Events exposing(..)
 import Time exposing (Time, second)
 import Json.Encode exposing(..)
 
-debug    = True
-tickTime = Time.inMilliseconds 150
+debug    = False
+tickTime = Time.inMilliseconds 50
 
 main =
   App.program
@@ -21,32 +22,60 @@ main =
 
 type alias Model =
   { snakeModel : Snake.Model
-  , time : Time
+  , speed : Speed
+  , time : Int
   }
+
+type Speed
+  = Slow
+  | Fast
+  | Mindblowing
 
 init : (Model, Cmd Msg)
 init =
   let (sModel, cmd) = Snake.init
   in
-     (Model sModel 0, Cmd.map SnakeMsg cmd)
+     (Model sModel Fast 0, Cmd.map SnakeMsg cmd)
 
+debugAttributes model = Json.Encode.object [ ("time", int model.time)
+                                           , ("speed", string (toString model.speed))
+                                           , ("snake", Snake.debugAttributes model.snakeModel)
+                                           ]
 -- UPDATE
 
 type Msg
   = Clock Time
+  | SetSpeed Speed
   | SnakeMsg Snake.Msg
+
+shouldTick: Model -> Bool
+shouldTick model = let tickTime = case model.speed of
+                                    Slow        -> 3
+                                    Fast        -> 2
+                                    Mindblowing -> 1
+                   in
+                      (model.time % tickTime) == 0
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case msg of
                      Clock _ ->
-                       let (sModel, cmd) = Snake.update Snake.Tick model.snakeModel
-                       in 
-                          (Model sModel (model.time + 1), Cmd.map SnakeMsg cmd)
+                       let model' = {model | time = model.time + 1}
+                       in
+                         if shouldTick model'
+                           then
+                             let (sModel, cmd) = Snake.update Snake.Tick model.snakeModel
+                             in 
+                                (Model sModel model.speed (model.time + 1), Cmd.map SnakeMsg cmd)
+                           else
+                             (model', Cmd.none)
+
+                     SetSpeed s ->
+                       ({model | speed = s}, Cmd.none)
 
                      SnakeMsg m ->
                        let (sModel, cmd) = Snake.update m model.snakeModel
                        in
-                          (Model sModel model.time, Cmd.map SnakeMsg cmd)
+                          (Model sModel model.speed model.time, Cmd.map SnakeMsg cmd)
 
 
 -- SUBSCRIPTIONS
@@ -59,20 +88,44 @@ subscriptions model =
 
 -- VIEW
 
+speedOption : Model -> Speed -> Html Msg
+speedOption model speed = button [ type' "button"
+                                 , onClick (SetSpeed speed)
+                                 , classList [ ("btn", True)
+                                             , ("btn-default", True)
+                                             , ("disabled", model.speed == speed)]
+                                 ]
+                                 [ text (toString speed)]
+
+speedSelector : Model -> Html Msg
+speedSelector model = div [ classList [("btn-toolbar", True)], attribute "role" "toolbar" ]
+                          [ div [ classList [("btn-group", True)] ]
+                                [ speedOption model Slow
+                                , speedOption model Fast
+                                , speedOption model Mindblowing]
+                          ]
+
 modelInspector : Model -> Html Msg
-modelInspector model = let attributes = Json.Encode.object [ ("time", float model.time)
-                                                           , ("snake", Snake.debugAttributes model.snakeModel)
-                                                           ]
-                       in div [ style [("margin-top", "40px")] ]
-                              [ pre [] [text (Json.Encode.encode 2 attributes)] ]
+modelInspector model = div [ style [("margin-top", "40px")] ]
+                           [ pre [] [text (Json.Encode.encode 2 (debugAttributes model))] ]
+
+row : Html Msg -> Html Msg
+row component = div [ classList [("row", True)] ]
+                    [ component ]
+
+rowLayout : List(Html Msg) -> Html Msg
+rowLayout components = div [ classList [("container", True)] ]
+                           (List.map row components)
 
 view : Model -> Html Msg
 view model = let
                snakeView = App.map SnakeMsg (Snake.view model.snakeModel)
-               baseView  = [snakeView]
+               baseView  = [ speedSelector model
+                           , snakeView
+                           ]
                inspector = modelInspector model
              in
                if debug
-                 then div [] (inspector::baseView)
-                 else div [] baseView
+                 then div [] [rowLayout (inspector::baseView)]
+                 else div [] [rowLayout baseView]
 
