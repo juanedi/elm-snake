@@ -25,7 +25,6 @@ type alias Snake = List(Cell)
 type alias Model =
   { foodPosition : Cell
   , snake : Snake
-  , bites : Int
   , direction : Direction
   , directionChange : Maybe Direction
   , lost : Bool
@@ -35,7 +34,6 @@ init : (Model, Cmd Msg)
 init =
     ({ foodPosition = (12,17)
      , snake = [(1,2), (1,3), (1,4), (1,5)]
-     , bites = 0
      , direction = Right
      , directionChange = Nothing
      , lost = False
@@ -62,8 +60,9 @@ type Msg
   | FoodAppeared Cell
   | Event EventKind
 
-type EventKind =
-  Died
+type EventKind
+  = Died
+  | Bite
 
 
 keyToDirection : Keyboard.KeyCode -> Direction -> Direction
@@ -94,12 +93,6 @@ moveSnake next model = let sn1  = next :: model.snake
                            sn2  = if next /= model.foodPosition then List.take ((List.length sn1)-1) sn1 else sn1
                        in { model | snake = sn2 }
 
-incrementBites : Bool -> Model -> Model
-incrementBites bite model = if bite
-                              then { model | bites = model.bites + 1 }
-                              else model
-
-
 moveFood : Cmd Msg
 moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.int 0 (rowCount-1)))
            in Random.generate FoodAppeared generator
@@ -128,11 +121,11 @@ update msg model =
                 ({model | lost = True}, raiseEvent Died)
               else
                 let
-                  bite   = next == model.foodPosition
-                  cmd    = if bite then moveFood else Cmd.none
-                  update = updateDirection >> moveSnake next >> incrementBites bite
+                  bite = next == model.foodPosition
+                  cmd  = if bite then Cmd.batch [(raiseEvent Bite), moveFood] else Cmd.none
+                  upd  = updateDirection >> moveSnake next
                 in
-                  (update model, cmd)
+                  (upd model, cmd)
 
       KeyUp keyCode ->
         case model.directionChange of
