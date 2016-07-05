@@ -1,9 +1,17 @@
-module Snake exposing (Model, Msg(Advance), init, update, view, subscriptions)
+module Snake exposing (Model
+                      , Msg(Advance, Event)
+                      , EventKind(..)
+                      , init
+                      , update
+                      , view
+                      , subscriptions
+                      )
 
 import Html exposing (..)
 import Html.Attributes exposing(..)
 import Keyboard
 import Random
+import Task
 
 rowCount    = 22
 columnCount = 22
@@ -20,6 +28,7 @@ type alias Model =
   , bites : Int
   , direction : Direction
   , directionChange : Maybe Direction
+  , lost : Bool
   }
 
 init : (Model, Cmd Msg)
@@ -29,6 +38,7 @@ init =
      , bites = 0
      , direction = Right
      , directionChange = Nothing
+     , lost = False
      }
     , Cmd.none
     )
@@ -50,6 +60,10 @@ type Msg
   = Advance
   | KeyUp Keyboard.KeyCode
   | FoodAppeared Cell
+  | Event EventKind
+
+type EventKind =
+  Died
 
 
 keyToDirection : Keyboard.KeyCode -> Direction -> Direction
@@ -90,6 +104,9 @@ moveFood : Cmd Msg
 moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.int 0 (rowCount-1)))
            in Random.generate FoodAppeared generator
 
+raiseEvent : EventKind -> Cmd Msg
+raiseEvent kind = Task.perform Event Event (Task.succeed kind)
+
 lost : Cell -> Model -> Bool
 lost (x,y) model = List.member (x,y) model.snake
                      || x < 0
@@ -99,33 +116,45 @@ lost (x,y) model = List.member (x,y) model.snake
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
-  case msg of
-    Advance ->
-      let next = nextPosition model.snake model.direction
-      in if lost next model
-            then init
-            else let
-                   bite   = next == model.foodPosition
-                   cmd    = if bite then moveFood else Cmd.none
-                   update = updateDirection >> moveSnake next >> incrementBites bite
-                 in
-                   (update model, cmd)
+  if model.lost
+  then
+    (model, Cmd.none)
+  else
+    case msg of
+      Advance ->
+        let next = nextPosition model.snake model.direction
+        in if lost next model
+              then
+                ({model | lost = True}, raiseEvent Died)
+              else
+                let
+                  bite   = next == model.foodPosition
+                  cmd    = if bite then moveFood else Cmd.none
+                  update = updateDirection >> moveSnake next >> incrementBites bite
+                in
+                  (update model, cmd)
 
-    KeyUp keyCode ->
-      case model.directionChange of
-        Just _ ->
-          (model, Cmd.none)
-        Nothing ->
-          let
-            directionChange = keyToDirection keyCode model.direction
-          in
-            ({model | direction = directionChange, directionChange = Just directionChange}, Cmd.none)
+      KeyUp keyCode ->
+        case model.directionChange of
+          Just _ ->
+            (model, Cmd.none)
+          Nothing ->
+            let
+              directionChange = keyToDirection keyCode model.direction
+            in
+              ({model | direction = directionChange, directionChange = Just directionChange}, Cmd.none)
 
-    FoodAppeared (x,y) ->
-      let (x', y') = model.foodPosition
-      in if x == x' || y == y'
-            then (model, moveFood)
-            else ({model | foodPosition = (x,y)}, Cmd.none)
+      FoodAppeared (x,y) ->
+        let (x', y') = model.foodPosition
+        in if x == x' || y == y'
+              then (model, moveFood)
+              else ({model | foodPosition = (x,y)}, Cmd.none)
+
+      Event _ ->
+        -- This kind of messages are triggered by this module just to allow parent controls
+        -- interested in events of this game to be notified without exposing our model.
+        (model, Cmd.none)
+
 
 
 -- SUBSCRIPTIONS
@@ -141,11 +170,14 @@ cellWidth  = 28
 cellHeight = 28
 
 cellClass : Model -> Int -> Int -> String
-cellClass model x y = if List.member(x,y) model.snake
-                      then "cell-snake"
-                      else if (x,y) == model.foodPosition
-                        then "cell-food"
-                        else "cell-background"
+cellClass model x y = if model.lost
+                      then "cell-background"
+                      else
+                        if List.member(x,y) model.snake
+                          then "cell-snake"
+                          else if (x,y) == model.foodPosition
+                            then "cell-food"
+                            else "cell-background"
 
 px : Int -> String
 px n = (toString n) ++ "px"

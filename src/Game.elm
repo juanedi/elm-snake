@@ -20,6 +20,7 @@ main =
 
 type alias Model =
   { snakeModel : Snake.Model
+  , record : Int
   , speed : Speed
   , debug : Bool
   , time : Int
@@ -35,6 +36,7 @@ init =
   let (sModel, cmd) = Snake.init
   in
      ( { snakeModel = sModel
+       , record = 0
        , speed = Fast
        , debug = False
        , time = 0
@@ -75,6 +77,13 @@ update msg model = case msg of
 
                      SetDebug v ->
                        ({model | debug = v}, Cmd.none)
+
+                     SnakeMsg (Event Died) ->
+                       let
+                         record = Basics.max model.snakeModel.bites model.record
+                         (sModel, cmd) = Snake.init
+                       in
+                         ({model | snakeModel = sModel, record = record}, Cmd.map SnakeMsg cmd)
 
                      SnakeMsg m ->
                        let (sModel, cmd) = Snake.update m model.snakeModel
@@ -145,6 +154,9 @@ modelInspector model = div [ classList [("hidden", not model.debug)], style [("m
 points : Model -> Html Msg
 points model = h1 [ class "status-part" ] [ text (toString model.snakeModel.bites) ]
 
+record : Model -> Html Msg
+record model = h1 [ class "status-part" ] [ text (toString model.record) ]
+
 statusPart : String -> Html Msg -> Html Msg
 statusPart title content = div [] [ h4 [] [ text title ]
                                   , content
@@ -154,6 +166,7 @@ gameView : Model -> Html Msg
 gameView model = let snakeView  = App.map SnakeMsg (Snake.view model.snakeModel)
                      statusview = div []
                                       [ statusPart "Score" (points model)
+                                      , statusPart "Record" (record model)
                                       , statusPart "Settings" (settings model)
                                       ]
                  in
