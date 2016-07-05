@@ -1,4 +1,5 @@
 import Snake exposing (..)
+import Snake.GridView exposing (view)
 import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing(..)
@@ -169,7 +170,7 @@ statusPart title content = div [] [ h4 [] [ text title ]
                                   ]
 
 gameView : Model -> Html Msg
-gameView model = let snakeView  = App.map SnakeMsg (Snake.view model.snakeModel)
+gameView model = let snakeView  = App.map SnakeMsg (Snake.GridView.view model.snakeModel)
                      statusview = div []
                                       [ statusPart "Score" (points model)
                                       , statusPart "Record" (record model)
