@@ -44,7 +44,7 @@ init =
   let (sModel, cmd) = Snake.init
   in
      ( { snakeModel = sModel
-       , viewMode = Grid
+       , viewMode = Canvas
        , score = 0
        , record = 0
        , speed = Fast
