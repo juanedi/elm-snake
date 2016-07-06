@@ -1,5 +1,6 @@
 import Snake exposing (..)
 import Snake.GridView exposing (view)
+import Snake.CanvasView exposing (view)
 import Html exposing (..)
 import Html.App as App
 import Html.Attributes exposing(..)
@@ -21,6 +22,7 @@ main =
 
 type alias Model =
   { snakeModel : Snake.Model
+  , viewMode : ViewMode
   , score : Int
   , record : Int
   , speed : Speed
@@ -33,11 +35,16 @@ type Speed
   | Fast
   | Mindblowing
 
+type ViewMode
+  = Grid
+  | Canvas
+
 init : (Model, Cmd Msg)
 init =
   let (sModel, cmd) = Snake.init
   in
      ( { snakeModel = sModel
+       , viewMode = Grid
        , score = 0
        , record = 0
        , speed = Fast
@@ -51,6 +58,7 @@ init =
 type Msg
   = Clock Time
   | SetSpeed Speed
+  | SetViewMode ViewMode
   | SetDebug Bool
   | SnakeMsg Snake.Msg
 
@@ -77,6 +85,9 @@ update msg model = case msg of
 
                      SetSpeed s ->
                        ({model | speed = s}, Cmd.none)
+
+                     SetViewMode m ->
+                       ({model | viewMode = m }, Cmd.none)
 
                      SetDebug v ->
                        ({model | debug = v}, Cmd.none)
@@ -110,9 +121,29 @@ subscriptions model =
 
 settings : Model -> Html Msg
 settings model = Html.form [ class "settings" ]
-                           [ speedSelector model
+                           [ viewModeSelector model
+                           , speedSelector model
                            , debugToggle model
                            ]
+
+viewModeOption : Model -> ViewMode -> Html Msg
+viewModeOption model viewMode = input [ type' "button"
+                                      , onClick (SetViewMode viewMode)
+                                      , value (toString viewMode)
+                                      , classList [ ("btn", True)
+                                                  , ("btn-default", True)
+                                                  , ("active", model.viewMode == viewMode)]
+                                      ]
+                                      [ ]
+
+
+viewModeSelector : Model -> Html Msg
+viewModeSelector model = div [ class "form-group" ]
+                          [ label [ for "view-mode" ] [ text "View mode" ]
+                          , div [ class "btn-group" ]
+                                [ viewModeOption model Grid
+                                , viewModeOption model Canvas] 
+                          ]
 
 speedOption : Model -> Speed -> Html Msg
 speedOption model speed = input [ type' "button"
@@ -170,12 +201,16 @@ statusPart title content = div [] [ h4 [] [ text title ]
                                   ]
 
 gameView : Model -> Html Msg
-gameView model = let snakeView  = App.map SnakeMsg (Snake.GridView.view model.snakeModel)
-                     statusview = div []
-                                      [ statusPart "Score" (points model)
-                                      , statusPart "Record" (record model)
-                                      , statusPart "Settings" (settings model)
-                                      ]
+gameView model = let
+                   display    = case model.viewMode of
+                                  Grid   -> Snake.GridView.view
+                                  Canvas -> Snake.CanvasView.view
+                   snakeView  = App.map SnakeMsg (display model.snakeModel)
+                   statusview = div []
+                                    [ statusPart "Score" (points model)
+                                    , statusPart "Record" (record model)
+                                    , statusPart "Settings" (settings model)
+                                    ]
                  in
                    div [ class "row" ]
                        [ div [ class "col-md-8" ] [ snakeView ]
