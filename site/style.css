@@ -18,29 +18,3 @@ body .row {
   margin-top: 30px;
 }
 
-.grid {
-  padding: 0;
-}
-
-.grid .row {
-  margin: 0;
-  padding: 0;
-  background-color: #00ff00;
-}
-
-.grid .cell {
-  float: left;
-  position: relative;
-}
-
-.grid .cell-background {
-  background-color: #bbbbbb;
-}
-
-.grid .cell-snake {
-  background-color: #0000ff;
-}
-
-.grid .cell-food {
-  background-color: #ff0000;
-}
