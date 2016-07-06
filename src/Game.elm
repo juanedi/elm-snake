@@ -141,8 +141,9 @@ viewModeSelector : Model -> Html Msg
 viewModeSelector model = div [ class "form-group" ]
                           [ label [ for "view-mode" ] [ text "View mode" ]
                           , div [ class "btn-group" ]
-                                [ viewModeOption model Grid
-                                , viewModeOption model Canvas] 
+                                [ viewModeOption model Canvas
+                                , viewModeOption model Grid
+                                ]
                           ]
 
 speedOption : Model -> Speed -> Html Msg

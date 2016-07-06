@@ -7,17 +7,13 @@ import Color exposing (..)
 import String exposing (concat)
 
 
-cellWidth  = 28
-cellHeight = 28
-
-
 -- STYLES
 
 px : Int -> String
 px n = (toString n) ++ "px"
 
 gridStyle : List((String, String))
-gridStyle = let gridWidth = Snake.columnCount * cellHeight
+gridStyle = let gridWidth = Snake.columnCount * Snake.cellSize
             in [ ("width", px gridWidth)
                , ("padding", "0")
                ]  
@@ -30,8 +26,8 @@ rowStyle = [ ("margin", "0")
 cellStyle : List((String, String)) 
 cellStyle = [ ("float", "left")
             , ("position", "relative")
-            , ("height", px cellHeight)
-            , ("width", px cellWidth)
+            , ("height", px Snake.cellSize)
+            , ("width", px Snake.cellSize)
             ]
 
 rgb : Color -> String

@@ -5,8 +5,10 @@ module Snake exposing (Model
                       , update
                       , subscriptions
 
+                      -- for view modules
                       , columnCount
                       , rowCount
+                      , cellSize
                       )
 
 import Html exposing (..)
@@ -17,6 +19,7 @@ import Task
 
 rowCount    = 22
 columnCount = 22
+cellSize    = 28
 
 -- MODEL
 
