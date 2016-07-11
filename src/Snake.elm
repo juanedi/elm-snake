@@ -61,7 +61,7 @@ type Direction
 
 type Msg
   = Advance
-  | KeyUp Keyboard.KeyCode
+  | KeyDown Keyboard.KeyCode
   | FoodAppeared Cell
   | Event EventKind
 
@@ -132,7 +132,7 @@ update msg model =
                 in
                   (upd model, cmd)
 
-      KeyUp keyCode ->
+      KeyDown keyCode ->
         case model.directionChange of
           Just _ ->
             (model, Cmd.none)
@@ -159,5 +159,5 @@ update msg model =
 
 
 subscriptions : Model -> Sub Msg
-subscriptions model = Keyboard.ups KeyUp
+subscriptions model = Keyboard.downs KeyDown
 
