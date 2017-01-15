@@ -12,4 +12,4 @@ package: compile
 
 watch:
 	clear
-	find src | grep elm$  | xargs fswatch -o | xargs -I % bash -c "clear; elm make src/Game.elm --output site/game.js"
+	find src | grep elm$ | entr make compile
