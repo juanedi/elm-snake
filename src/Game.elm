@@ -9,10 +9,6 @@ import Snake.GridView exposing (view)
 import Time exposing (Time, second)
 
 
-tickTime =
-    Time.inMilliseconds 10
-
-
 main =
     Html.program
         { init = init
@@ -20,6 +16,13 @@ main =
         , update = update
         , subscriptions = subscriptions
         }
+
+
+tickTime : Float
+tickTime =
+    -- TODO: Change the subscription based on the speed chosen by the user instead
+    -- of having this small tick time and ignoring most of the events.
+    Time.inMilliseconds 10
 
 
 
@@ -48,6 +51,14 @@ type ViewMode
     | Canvas
 
 
+type Msg
+    = Clock Time
+    | SetSpeed Speed
+    | SetViewMode ViewMode
+    | SetDebug Bool
+    | SnakeMsg Snake.Msg
+
+
 init : ( Model, Cmd Msg )
 init =
     let
@@ -66,33 +77,12 @@ init =
         )
 
 
-
--- UPDATE
-
-
-type Msg
-    = Clock Time
-    | SetSpeed Speed
-    | SetViewMode ViewMode
-    | SetDebug Bool
-    | SnakeMsg Snake.Msg
-
-
-shouldAdvance : Model -> Bool
-shouldAdvance model =
-    let
-        tickTime =
-            case model.speed of
-                Slow ->
-                    20
-
-                Fast ->
-                    5
-
-                Mindblowing ->
-                    3
-    in
-        (model.time % tickTime) == 0
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.batch
+        [ Time.every tickTime Clock
+        , Sub.map SnakeMsg (Snake.subscriptions model.snakeModel)
+        ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -106,7 +96,7 @@ update msg model =
                 if shouldAdvance updatedModel then
                     let
                         ( sModel, cmd ) =
-                            Snake.update Advance model.snakeModel
+                            Snake.update Tick model.snakeModel
                     in
                         ( { model | snakeModel = sModel, time = model.time + 1 }, Cmd.map SnakeMsg cmd )
                 else
@@ -142,20 +132,39 @@ update msg model =
                 ( { model | snakeModel = sModel }, Cmd.map SnakeMsg cmd )
 
 
+shouldAdvance : Model -> Bool
+shouldAdvance model =
+    let
+        tickTime =
+            case model.speed of
+                Slow ->
+                    20
 
--- SUBSCRIPTIONS
+                Fast ->
+                    5
 
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.batch
-        [ Time.every tickTime Clock
-        , Sub.map SnakeMsg (Snake.subscriptions model.snakeModel)
-        ]
+                Mindblowing ->
+                    3
+    in
+        (model.time % tickTime) == 0
 
 
 
 -- VIEW
+
+
+view : Model -> Html Msg
+view model =
+    let
+        inspector =
+            modelInspector model
+
+        baseView =
+            [ gameView model
+            , inspector
+            ]
+    in
+        div [] [ rowLayout baseView ]
 
 
 settings : Model -> Html Msg
@@ -312,17 +321,3 @@ rowLayout : List (Html Msg) -> Html Msg
 rowLayout components =
     div [ class "container" ]
         (List.map row components)
-
-
-view : Model -> Html Msg
-view model =
-    let
-        inspector =
-            modelInspector model
-
-        baseView =
-            [ gameView model
-            , inspector
-            ]
-    in
-        div [] [ rowLayout baseView ]
