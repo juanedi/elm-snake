@@ -1,9 +1,9 @@
 module Snake.GridView exposing (view)
 
-import Snake exposing (..)
+import Color exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Color exposing (..)
+import Snake exposing (..)
 import String exposing (concat)
 
 
@@ -16,14 +16,14 @@ gridStyle : List((String, String))
 gridStyle = let gridWidth = Snake.columnCount * Snake.cellSize
             in [ ("width", px gridWidth)
                , ("padding", "0")
-               ]  
+               ]
 
 rowStyle : List((String, String))
 rowStyle = [ ("margin", "0")
            , ("padding", "0")
            ]
 
-cellStyle : List((String, String)) 
+cellStyle : List((String, String))
 cellStyle = [ ("float", "left")
             , ("position", "relative")
             , ("height", px Snake.cellSize)
@@ -58,11 +58,12 @@ cell model rowIndex colIndex = let
 buildRow : Model -> Int -> Html a
 buildRow model rowIndex = let
                             buildCell = (\colIndex -> cell model rowIndex colIndex)
-                            cells = List.map buildCell [0..Snake.columnCount-1]
+                            range = List.range 0 (Snake.columnCount-1)
+                            cells = List.map buildCell range
                           in
                             div [ class "row", style rowStyle ] cells
 
 
 view : Model -> Html Msg
 view model = div [ class "grid container", style gridStyle ]
-                 (List.map (\rowIndex -> buildRow model rowIndex) [0..Snake.rowCount-1])
+                 (List.map (\rowIndex -> buildRow model rowIndex) (List.range 0 (Snake.rowCount - 1 )))

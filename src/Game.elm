@@ -1,16 +1,15 @@
-import Snake exposing (..)
-import Snake.GridView exposing (view)
-import Snake.CanvasView exposing (view)
 import Html exposing (..)
-import Html.App as App
 import Html.Attributes exposing(..)
 import Html.Events exposing(..)
+import Snake exposing (..)
+import Snake.CanvasView exposing (view)
+import Snake.GridView exposing (view)
 import Time exposing (Time, second)
 
 tickTime = Time.inMilliseconds 10
 
 main =
-  App.program
+  Html.program
     { init = init
     , view = view
     , update = update
@@ -73,15 +72,15 @@ shouldAdvance model = let tickTime = case model.speed of
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model = case msg of
                      Clock _ ->
-                       let model' = {model | time = model.time + 1}
+                       let updatedModel = {model | time = model.time + 1}
                        in
-                         if shouldAdvance model'
+                         if shouldAdvance updatedModel
                            then
                              let (sModel, cmd) = Snake.update Advance model.snakeModel
-                             in 
+                             in
                                 ({model | snakeModel = sModel, time = model.time+1}, Cmd.map SnakeMsg cmd)
                            else
-                             (model', Cmd.none)
+                             (updatedModel, Cmd.none)
 
                      SetSpeed s ->
                        ({model | speed = s}, Cmd.none)
@@ -127,7 +126,7 @@ settings model = Html.form [ class "settings" ]
                            ]
 
 viewModeOption : Model -> ViewMode -> Html Msg
-viewModeOption model viewMode = input [ type' "button"
+viewModeOption model viewMode = input [ type_ "button"
                                       , onClick (SetViewMode viewMode)
                                       , value (toString viewMode)
                                       , classList [ ("btn", True)
@@ -147,7 +146,7 @@ viewModeSelector model = div [ class "form-group" ]
                           ]
 
 speedOption : Model -> Speed -> Html Msg
-speedOption model speed = input [ type' "button"
+speedOption model speed = input [ type_ "button"
                                  , onClick (SetSpeed speed)
                                  , value (toString speed)
                                  , classList [ ("btn", True)
@@ -162,12 +161,12 @@ speedSelector model = div [ class "form-group" ]
                           , div [ class "btn-group" ]
                                 [ speedOption model Slow
                                 , speedOption model Fast
-                                , speedOption model Mindblowing] 
+                                , speedOption model Mindblowing]
                           ]
 
 
 debugOption : Model -> Bool -> Html Msg
-debugOption model val = input [ type' "button"
+debugOption model val = input [ type_ "button"
                                  , onClick (SetDebug val)
                                  , value (if val then "On" else "Off")
                                  , classList [ ("btn", True)
@@ -183,7 +182,7 @@ debugToggle model = div [ class "form-group" ]
                           , div [ class "btn-group" ]
                                 [ debugOption model True
                                 , debugOption model False
-                                ] 
+                                ]
                           ]
 
 modelInspector : Model -> Html Msg
@@ -206,7 +205,7 @@ gameView model = let
                    display    = case model.viewMode of
                                   Grid   -> Snake.GridView.view
                                   Canvas -> Snake.CanvasView.view
-                   snakeView  = App.map SnakeMsg (display model.snakeModel)
+                   snakeView  = Html.map SnakeMsg (display model.snakeModel)
                    statusview = div []
                                     [ statusPart "Score" (points model)
                                     , statusPart "Record" (record model)
@@ -234,4 +233,3 @@ view model = let
                            ]
              in
                 div [] [rowLayout baseView]
-

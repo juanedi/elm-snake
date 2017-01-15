@@ -103,7 +103,7 @@ moveFood = let generator = (Random.pair (Random.int 0 (columnCount-1)) (Random.i
            in Random.generate FoodAppeared generator
 
 raiseEvent : EventKind -> Cmd Msg
-raiseEvent kind = Task.perform Event Event (Task.succeed kind)
+raiseEvent kind = Task.perform Event (Task.succeed kind)
 
 lost : Cell -> Model -> Bool
 lost (x,y) model = List.member (x,y) model.snake
@@ -143,8 +143,8 @@ update msg model =
               ({model | direction = directionChange, directionChange = Just directionChange}, Cmd.none)
 
       FoodAppeared (x,y) ->
-        let (x', y') = model.foodPosition
-        in if x == x' || y == y'
+        let (x2, y2) = model.foodPosition
+        in if x == x2 || y == y2
               then (model, moveFood)
               else ({model | foodPosition = (x,y)}, Cmd.none)
 
@@ -160,4 +160,3 @@ update msg model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model = Keyboard.downs KeyDown
-
